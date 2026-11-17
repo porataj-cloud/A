@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="חדר מצב">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#000000">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>חדר מצב LSK</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#000;color:#F3E7C4;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
+main{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center}
+img{width:132px;height:132px;border-radius:28px;display:block}
+h1{font-size:1.5rem;margin:22px 0 4px;color:#E9BC4E;font-weight:700}
+.sub{margin:0 0 26px;color:#B9A878;font-size:.95rem}
+form{width:100%;max-width:330px;display:none}
+form.on{display:block}
+label{display:block;text-align:right;font-size:.9rem;color:#D8C792;margin-bottom:6px}
+input[type=text]{width:100%;padding:14px 12px;font-size:1.15rem;letter-spacing:.06em;text-align:center;direction:ltr;border-radius:12px;border:1.5px solid #6E5A22;background:#0E0C06;color:#FFF3CF;font-family:ui-monospace,Menlo,Consolas,monospace}
+input[type=text]:focus{outline:2px solid #E9BC4E;outline-offset:2px}
+.rem{display:flex;align-items:center;gap:8px;justify-content:flex-start;margin:14px 2px;font-size:.92rem;color:#D8C792}
+.rem input{width:20px;height:20px;accent-color:#E9BC4E}
+button{width:100%;padding:14px;font-size:1.05rem;font-weight:700;border-radius:12px;border:0;background:#E9BC4E;color:#1A1403;cursor:pointer}
+button:disabled{opacity:.6}
+#msg{min-height:1.5em;margin:16px 0 0;font-size:.95rem;color:#D8C792}
+#msg.err{color:#FF9A8F}
+.note{margin-top:22px;font-size:.8rem;color:#8F8160;max-width:330px}
+</style>
+</head>
+<body>
+<main>
+<img src="icon-512.png" alt="LSK AG" width="132" height="132">
+<h1>חדר מצב הקבוצה</h1>
+<p class="sub">גרסה פרטית ומוצפנת</p>
+<form id="f" autocomplete="off">
+<label for="p">ביטוי גישה</label>
+<input id="p" type="text" inputmode="text" autocapitalize="none" autocorrect="off" autocomplete="off" spellcheck="false" enterkeyhint="go" aria-describedby="msg">
+<div class="rem"><input id="r" type="checkbox" checked><label for="r" style="margin:0">לזכור במכשיר הזה</label></div>
+<button id="b" type="submit">פתיחה</button>
+</form>
+<p id="msg" role="status" aria-live="polite">טוען</p>
+<p class="note">התוכן מוצפן. בלי ביטוי הגישה אי אפשר לקרוא אותו.</p>
+</main>
+<script>
+(function(){
+var KB={"salt":"FmW7KmXlCNWNg405hNT3Rw==","iter":600000,"iv":"7lEtbzv+cNxexJdZ","ct":"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"},END="/*FLO-DATA-END*/",START="/*FLO-DATA-START*/";
+function $(i){return document.getElementById(i);}
+function say(t,err){var m=$("msg");m.textContent=t;m.className=err?"err":"";}
+function ub(s){var b=atob(s),a=new Uint8Array(b.length);for(var i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a;}
+function idb(){return new Promise(function(res,rej){var q=indexedDB.open("lsk-hub",1);q.onupgradeneeded=function(){q.result.createObjectStore("k");};q.onsuccess=function(){res(q.result);};q.onerror=function(){rej(q.error);};});}
+function kget(){return idb().then(function(d){return new Promise(function(res){var q=d.transaction("k").objectStore("k").get("priv");q.onsuccess=function(){res(q.result||null);};q.onerror=function(){res(null);};});}).catch(function(){return null;});}
+function kput(k){return idb().then(function(d){return new Promise(function(res){var t=d.transaction("k","readwrite");t.objectStore("k").put(k,"priv");t.oncomplete=function(){res();};t.onerror=function(){res();};t.onabort=function(){res();};});}).catch(function(){});}
+function kdel(){return idb().then(function(d){return new Promise(function(res){var t=d.transaction("k","readwrite");t.objectStore("k").delete("priv");t.oncomplete=function(){res();};t.onerror=function(){res();};t.onabort=function(){res();};});}).catch(function(){});}
+async function keyFrom(pass){
+  var norm=String(pass).toLowerCase().replace(/[^a-z0-9]/g,"");
+  var base=await crypto.subtle.importKey("raw",new TextEncoder().encode(norm),"PBKDF2",false,["deriveKey"]);
+  var kek=await crypto.subtle.deriveKey({name:"PBKDF2",salt:ub(KB.salt),iterations:KB.iter,hash:"SHA-256"},base,{name:"AES-GCM",length:256},false,["decrypt"]);
+  var pk8=await crypto.subtle.decrypt({name:"AES-GCM",iv:ub(KB.iv)},kek,ub(KB.ct));
+  return crypto.subtle.importKey("pkcs8",pk8,{name:"RSA-OAEP",hash:"SHA-256"},false,["decrypt"]);
+}
+async function open1(priv,url,optional){
+  var r;try{r=await fetch(url+"?t="+Date.now(),{cache:"no-store"});}catch(e){if(optional)return null;throw {net:true};}
+  if(!r.ok){if(optional)return null;throw {net:true};}
+  var e=await r.json();
+  var raw=await crypto.subtle.decrypt({name:"RSA-OAEP"},priv,ub(e.wk));
+  var key=await crypto.subtle.importKey("raw",raw,"AES-GCM",false,["decrypt"]);
+  var gz=await crypto.subtle.decrypt({name:"AES-GCM",iv:ub(e.iv)},key,ub(e.ct));
+  var txt=await new Response(new Blob([gz]).stream().pipeThrough(new DecompressionStream("gzip"))).text();
+  return JSON.parse(txt);
+}
+function fls(block){var m=/var FLS="(\d\d)\.(\d\d)\.(\d{4}), (\d\d):(\d\d)"/.exec(block||"");return m?+(m[3]+m[2]+m[1]+m[4]+m[5]):0;}
+async function launch(priv){
+  var app=await open1(priv,"app.enc"),upd=null;
+  try{upd=await open1(priv,"data.enc",true);}catch(e){upd=null;}
+  var html=app.html,snap=app.snap||null;
+  if(upd){
+    if(typeof upd.block==="string"){var a=html.indexOf(START),b=html.indexOf(END);if(a>=0&&b>a&&fls(upd.block)>fls(html.slice(a,b)))html=html.slice(0,a)+upd.block.trim()+html.slice(b+END.length);}
+    if(upd.snap&&(!snap||(+upd.snap.at||0)>(+snap.at||0)))snap=upd.snap;
+  }
+  window.LSK_STANDALONE=true;window.LSK_SNAP=snap;
+  document.open();document.write(html);document.close();
+}
+function form(on){$("f").className=on?"on":"";if(on){say("");try{$("p").focus();}catch(e){}}}
+function fail(e){if(e&&e.net)say("אין חיבור לרשת, או שהתוכן אינו זמין כעת. נסה שוב.",true);else say("התוכן לא נפתח. הזן שוב את ביטוי הגישה.",true);}
+async function start(){
+  if(!(window.crypto&&crypto.subtle&&window.indexedDB&&window.DecompressionStream)){say("הדפדפן הזה אינו תומך בפתיחה מאובטחת. נסה בגרסה עדכנית של Safari.",true);return;}
+  if(location.hash==="#lock"){await kdel();try{history.replaceState(null,"",location.pathname+location.search);}catch(e){}form(true);say("האפליקציה ננעלה במכשיר הזה.");return;}
+  var k=await kget();
+  if(!k){form(true);return;}
+  say("פותח");
+  try{await launch(k);}catch(e){if(!(e&&e.net))await kdel();form(true);fail(e);}
+}
+$("f").addEventListener("submit",async function(ev){ev.preventDefault();var b=$("b"),pass=$("p").value;if(!pass.trim())return;b.disabled=true;say("פותח");
+  var k=null;try{k=await keyFrom(pass);}catch(e){b.disabled=false;say("ביטוי הגישה שגוי.",true);return;}
+  if($("r").checked)await kput(k);
+  try{await launch(k);}catch(e){b.disabled=false;fail(e);}
+});
+start();
+})();
+</script>
+</body>
+</html>
