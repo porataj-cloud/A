@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Animation preview</title>
+<style>
+  :root { --bg:#0b1020; --fg:#e8ecf5; --muted:#8a93a8; }
+  html,body { margin:0; background:var(--bg); color:var(--fg); font-family:"DejaVu Sans",system-ui,sans-serif; }
+  .wrap { max-width:1280px; margin:0 auto; padding:16px; }
+  canvas { width:100%; height:auto; display:block; border-radius:8px; background:#000; }
+  .bar { display:flex; gap:12px; align-items:center; margin-top:10px; color:var(--muted); font-size:14px; }
+  button { font:inherit; padding:6px 14px; border-radius:6px; border:1px solid #2a3350; background:#151c33; color:var(--fg); cursor:pointer; }
+  input[type=range] { flex:1; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <canvas id="c" width="1280" height="720"></canvas>
+  <div class="bar">
+    <button id="play">השהה</button>
+    <input id="seek" type="range" min="0" max="5" step="0.001" value="0" aria-label="ציר זמן">
+    <span id="time">0.00 / 5.00 ש׳</span>
+  </div>
+</div>
+<script>
+// Deterministic animation: every frame is a pure function of time t (seconds).
+// The same renderAt(t) is used for live browser playback and for frame-by-frame MP4 export.
+const DURATION = 5, W = 1280, H = 720;
+const ctx = document.getElementById('c').getContext('2d');
+
+const clamp = (x,a=0,b=1) => Math.min(b, Math.max(a, x));
+const prog  = (t,s,e) => clamp((t - s) / (e - s));
+const easeOutCubic = x => 1 - Math.pow(1 - x, 3);
+const easeInOut = x => x < .5 ? 4*x*x*x : 1 - Math.pow(-2*x + 2, 3) / 2;
+const easeOutBack = x => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3*Math.pow(x-1,3) + c1*Math.pow(x-1,2); };
+
+const COLORS = ['#4f8cff', '#7c5cff', '#22c3a6', '#ffb547'];
+
+function renderAt(t) {
+  t = clamp(t, 0, DURATION);
+  // Background gradient that slowly shifts
+  const g = ctx.createLinearGradient(0, 0, W, H);
+  const s = Math.sin(t / DURATION * Math.PI);
+  g.addColorStop(0, `hsl(${228 + 20*s} 55% 9%)`);
+  g.addColorStop(1, `hsl(${258 + 20*s} 50% 14%)`);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+
+  const cx = W/2, cy = H/2 - 40;
+
+  // 1) Expanding rings (0.0 – 2.2s)
+  for (let i = 0; i < 4; i++) {
+    const p = prog(t, 0.15*i, 1.6 + 0.15*i);
+    if (p <= 0) continue;
+    const r = 40 + easeOutCubic(p) * (180 + 70*i);
+    ctx.strokeStyle = COLORS[i];
+    ctx.globalAlpha = (1 - p) * 0.9 * (1 - prog(t, 4.4, 5));
+    ctx.lineWidth = 6 - i;
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+
+  // 2) Orbiting dots (0.6 – 5s)
+  const orbitIn = easeOutCubic(prog(t, 0.6, 1.8)) * (1 - easeInOut(prog(t, 4.3, 5)));
+  for (let i = 0; i < 4; i++) {
+    const a = t * 1.4 + i * Math.PI / 2;
+    const R = 150 * orbitIn;
+    ctx.fillStyle = COLORS[i];
+    ctx.globalAlpha = orbitIn;
+    ctx.beginPath(); ctx.arc(cx + Math.cos(a)*R, cy + Math.sin(a)*R*0.55, 14, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // 3) Central shape: pops in, rotates, morphs from square to circle
+  const pop = easeOutBack(prog(t, 0.3, 1.2));
+  const morph = easeInOut(prog(t, 1.6, 3.0));
+  const out = easeInOut(prog(t, 4.3, 5));
+  const size = 110 * pop * (1 - out);
+  if (size > 0.5) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(t * 0.9 * (1 - morph) + morph * Math.PI);
+    const grad = ctx.createLinearGradient(-size, -size, size, size);
+    grad.addColorStop(0, '#4f8cff'); grad.addColorStop(1, '#7c5cff');
+    ctx.fillStyle = grad;
+    const r = size * (0.18 + 0.82 * morph);
+    ctx.beginPath(); ctx.roundRect(-size, -size, size*2, size*2, r); ctx.fill();
+    ctx.restore();
+  }
+
+  // 4) Title + subtitle (2.0 – 5s)
+  const tIn = easeOutCubic(prog(t, 2.0, 2.8));
+  const sIn = easeOutCubic(prog(t, 2.5, 3.3));
+  const fade = 1 - prog(t, 4.5, 5);
+  ctx.textAlign = 'center'; ctx.direction = 'rtl';
+  ctx.fillStyle = '#e8ecf5';
+  ctx.globalAlpha = tIn * fade;
+  ctx.font = 'bold 64px "DejaVu Sans", sans-serif';
+  ctx.fillText('תצוגה מקדימה', cx, H - 150 + (1 - tIn) * 30);
+  ctx.globalAlpha = sIn * fade;
+  ctx.fillStyle = '#8a93a8';
+  ctx.font = '30px "DejaVu Sans", sans-serif';
+  ctx.fillText('קטע אנימציה קצר · 5 שניות', cx, H - 95 + (1 - sIn) * 20);
+  ctx.globalAlpha = 1;
+
+  // Progress line at bottom
+  ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fillRect(0, H - 4, W, 4);
+  ctx.fillStyle = '#22c3a6'; ctx.fillRect(W, H - 4, -W * (t / DURATION), 4);
+}
+window.renderAt = renderAt;
+window.DURATION = DURATION;
+
+// Live playback UI (disabled when ?export=1 so the exporter drives time itself)
+if (!new URLSearchParams(location.search).has('export')) {
+  const seek = document.getElementById('seek'), time = document.getElementById('time'), btn = document.getElementById('play');
+  let playing = true, t0 = performance.now(), cur = 0;
+  btn.onclick = () => { playing = !playing; btn.textContent = playing ? 'השהה' : 'נגן'; t0 = performance.now() - cur*1000; };
+  seek.oninput = () => { cur = +seek.value; t0 = performance.now() - cur*1000; renderAt(cur); };
+  (function loop(now) {
+    if (playing) { cur = ((now - t0) / 1000) % DURATION; seek.value = cur; }
+    renderAt(cur); time.textContent = `${cur.toFixed(2)} / ${DURATION.toFixed(2)} ש׳`;
+    requestAnimationFrame(loop);
+  })(performance.now());
+} else { renderAt(0); }
+</script>
+</body>
+</html>
