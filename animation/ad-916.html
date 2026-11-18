@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ad 9:16 preview</title>
+<style>
+  html,body { margin:0; background:#111; color:#eee; font-family:"DejaVu Sans",system-ui,sans-serif; }
+  .wrap { max-width:420px; margin:0 auto; padding:16px; }
+  canvas { width:100%; height:auto; display:block; border-radius:12px; }
+  .bar { display:flex; gap:10px; align-items:center; margin-top:10px; font-size:14px; color:#aaa; }
+  button { font:inherit; padding:6px 14px; border-radius:6px; border:1px solid #333; background:#222; color:#eee; }
+  input[type=range] { flex:1; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <canvas id="c" width="1080" height="1920"></canvas>
+  <div class="bar"><button id="play">השהה</button><input id="seek" type="range" min="0" max="15" step="0.001" value="0" aria-label="ציר זמן"><span id="time"></span></div>
+</div>
+<script>
+// ===================== CONFIG — כל מה שמחליפים נמצא כאן =====================
+const CONFIG = {
+  brand:    '[שם העסק]',
+  logo:     'logo.png',            // קובץ לוגו באותה תיקייה (PNG/SVG). אם חסר — מוצג ממלא מקום
+  headline: ['[המסר הראשי]', '[בשתי שורות]'],
+  benefits: ['[יתרון ראשון]', '[יתרון שני]', '[יתרון שלישי]'],
+  cta:      '[קריאה לפעולה]',
+  contact:  '[אתר / טלפון]',
+  colors:   { bg1:'#0f1630', bg2:'#2a1650', accent:'#ffb547', accent2:'#4f8cff', text:'#ffffff', muted:'#b9c0d4' },
+};
+// ===========================================================================
+
+const DURATION = 15, W = 1080, H = 1920, C = CONFIG.colors;
+const ctx = document.getElementById('c').getContext('2d');
+const clamp = (x,a=0,b=1) => Math.min(b, Math.max(a, x));
+const prog = (t,s,e) => clamp((t-s)/(e-s));
+const eOut = x => 1 - Math.pow(1-x, 3);
+const eIO  = x => x < .5 ? 4*x*x*x : 1 - Math.pow(-2*x+2, 3)/2;
+const eBack = x => { const c1=1.70158, c3=c1+1; return 1 + c3*Math.pow(x-1,3) + c1*Math.pow(x-1,2); };
+// scene window: fade/slide in at s, out at e
+const win = (t,s,e,d=.5) => eOut(prog(t,s,s+d)) * (1 - eIO(prog(t,e-d,e)));
+
+let logoImg = null;
+const logoReady = new Promise(res => {
+  const im = new Image();
+  im.onload = () => { logoImg = im; res(); };
+  im.onerror = () => res();
+  im.src = CONFIG.logo;
+});
+
+function drawLogo(x, y, size, alpha) {
+  ctx.save(); ctx.globalAlpha = alpha;
+  if (logoImg) {
+    const r = Math.min(size / logoImg.width, size / logoImg.height);
+    const w = logoImg.width * r, h = logoImg.height * r;
+    ctx.drawImage(logoImg, x - w/2, y - h/2, w, h);
+  } else {
+    ctx.strokeStyle = C.accent; ctx.lineWidth = 6; ctx.setLineDash([18, 12]);
+    ctx.beginPath(); ctx.arc(x, y, size/2, 0, Math.PI*2); ctx.stroke();
+    ctx.setLineDash([]); ctx.fillStyle = C.accent; ctx.font = 'bold 44px "DejaVu Sans"';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('LOGO', x, y);
+  }
+  ctx.restore();
+}
+
+function text(str, x, y, size, color, alpha, weight='bold') {
+  ctx.save(); ctx.globalAlpha = alpha; ctx.fillStyle = color;
+  ctx.font = `${weight} ${size}px "DejaVu Sans", sans-serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.direction = 'rtl';
+  ctx.fillText(str, x, y); ctx.restore();
+}
+
+function renderAt(t) {
+  t = clamp(t, 0, DURATION);
+  // Background
+  const g = ctx.createLinearGradient(0, 0, W*0.3, H);
+  g.addColorStop(0, C.bg1); g.addColorStop(1, C.bg2);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  // Drifting soft blobs
+  for (let i = 0; i < 3; i++) {
+    const bx = W*(0.2 + 0.3*i) + Math.sin(t*0.4 + i*2)*120, by = H*(0.25 + 0.25*i) + Math.cos(t*0.3 + i)*160;
+    const rg = ctx.createRadialGradient(bx, by, 0, bx, by, 420);
+    rg.addColorStop(0, (i%2 ? C.accent2 : C.accent) + '33'); rg.addColorStop(1, '#0000');
+    ctx.fillStyle = rg; ctx.fillRect(0, 0, W, H);
+  }
+  const cx = W/2;
+
+  // Scene 1 (0–3.2s): logo pop + brand name
+  const s1 = win(t, 0, 3.2);
+  if (s1 > 0) {
+    const pop = eBack(prog(t, 0.1, 0.9));
+    drawLogo(cx, H*0.42, 340 * pop, s1);
+    text(CONFIG.brand, cx, H*0.42 + 300 + (1-eOut(prog(t,.6,1.3)))*40, 84, C.text, s1 * prog(t,.6,1.1));
+  }
+
+  // Scene 2 (3–7.2s): headline, line by line
+  const s2 = win(t, 3.0, 7.2);
+  if (s2 > 0) {
+    CONFIG.headline.forEach((line, i) => {
+      const p = eOut(prog(t, 3.2 + i*0.45, 3.9 + i*0.45));
+      text(line, cx + (1-p)*-120, H*0.44 + i*130, 100, C.text, s2 * p);
+    });
+    const u = eIO(prog(t, 4.2, 5.0));
+    ctx.fillStyle = C.accent; ctx.globalAlpha = s2;
+    ctx.fillRect(cx + 300 - 600*u, H*0.44 + CONFIG.headline.length*130 - 20, 600*u, 12);
+    ctx.globalAlpha = 1;
+  }
+
+  // Scene 3 (7–11.2s): benefits one by one
+  const s3 = win(t, 7.0, 11.2);
+  if (s3 > 0) {
+    CONFIG.benefits.forEach((b, i) => {
+      const p = eOut(prog(t, 7.3 + i*0.7, 7.9 + i*0.7));
+      const y = H*0.36 + i*200;
+      ctx.save(); ctx.globalAlpha = s3 * p;
+      ctx.fillStyle = '#ffffff14'; ctx.beginPath(); ctx.roundRect(110 + (1-p)*80, y - 75, W - 220, 150, 28); ctx.fill();
+      ctx.fillStyle = C.accent; ctx.beginPath(); ctx.arc(W - 190 + (1-p)*80, y, 34, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = C.bg1; ctx.lineWidth = 8; ctx.beginPath();
+      ctx.moveTo(W - 206 + (1-p)*80, y); ctx.lineTo(W - 194 + (1-p)*80, y + 13); ctx.lineTo(W - 172 + (1-p)*80, y - 13); ctx.stroke();
+      ctx.restore();
+      text(b, cx - 40 + (1-p)*80, y, 60, C.text, s3 * p);
+    });
+  }
+
+  // Scene 4 (11–15s): CTA button + contact + logo (holds to end)
+  const s4 = eOut(prog(t, 11.0, 11.6));
+  if (s4 > 0) {
+    drawLogo(cx, H*0.30, 240, s4);
+    const pulse = 1 + 0.04*Math.sin((t-11.6)*5) * prog(t, 11.8, 12.2);
+    const bw = 760*pulse, bh = 170*pulse, by = H*0.55;
+    ctx.save(); ctx.globalAlpha = s4; ctx.fillStyle = C.accent;
+    ctx.beginPath(); ctx.roundRect(cx - bw/2, by - bh/2, bw, bh, bh/2); ctx.fill(); ctx.restore();
+    text(CONFIG.cta, cx, by, 76*pulse, C.bg1, s4);
+    text(CONFIG.contact, cx, H*0.67, 60, C.muted, eOut(prog(t, 11.5, 12.2)), 'normal');
+  }
+
+  // Progress bar
+  ctx.fillStyle = '#ffffff22'; ctx.fillRect(0, H-8, W, 8);
+  ctx.fillStyle = C.accent; ctx.fillRect(W, H-8, -W*(t/DURATION), 8);
+}
+window.renderAt = renderAt; window.DURATION = DURATION; window.ready = logoReady;
+
+if (!new URLSearchParams(location.search).has('export')) {
+  const seek = document.getElementById('seek'), time = document.getElementById('time'), btn = document.getElementById('play');
+  let playing = true, t0 = performance.now(), cur = 0;
+  btn.onclick = () => { playing = !playing; btn.textContent = playing ? 'השהה' : 'נגן'; t0 = performance.now() - cur*1000; };
+  seek.oninput = () => { cur = +seek.value; t0 = performance.now() - cur*1000; };
+  (function loop(now) {
+    if (playing) { cur = ((now - t0)/1000) % DURATION; seek.value = cur; }
+    renderAt(cur); time.textContent = `${cur.toFixed(1)} / ${DURATION} ש׳`;
+    requestAnimationFrame(loop);
+  })(performance.now());
+} else { logoReady.then(() => renderAt(0)); }
+</script>
+</body>
+</html>
