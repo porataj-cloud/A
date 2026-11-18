@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LSK humor reel</title>
+<style>
+  html,body { margin:0; background:#111; color:#eee; font-family:"DejaVu Sans",system-ui,sans-serif; }
+  .wrap { max-width:420px; margin:0 auto; padding:16px; }
+  canvas { width:100%; height:auto; display:block; border-radius:12px; }
+  .bar { display:flex; gap:10px; align-items:center; margin-top:10px; font-size:14px; color:#aaa; }
+  button { font:inherit; padding:6px 14px; border-radius:6px; border:1px solid #333; background:#222; color:#eee; }
+  input[type=range] { flex:1; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <canvas id="c" width="1080" height="1920"></canvas>
+  <div class="bar"><button id="play">השהה</button><input id="seek" type="range" min="0" max="15" step="0.001" value="0" aria-label="ציר זמן"><span id="time"></span></div>
+</div>
+<script>
+// ===================== CONFIG =====================
+const CONFIG = {
+  logo: 'lsk-logo.png',
+  hook: ['השאלה הנצחית', 'של כל אירוע:'],
+  question: 'יהיה מספיק אוכל?',
+  meterIntro: 'אצלנו מודדים את זה ככה:',
+  meterLabels: ['קצת', 'מספיק', 'הרבה', 'סבתא\nמרוצה'],
+  meterResult: 'הקריאה: מחוץ לסקאלה',
+  sideTitle: 'תופעות לוואי אפשריות:',
+  sideEffects: ['דודות מבקשות מתכון', 'אורחים יוצאים עם קופסאות', 'אף אחד לא ממהר הביתה'],
+  services: 'חתונות · בר מצוות · אירועים',
+  contact: '+41 44 810 40 00',
+  colors: { bg:'#070707', gold:'#d9ad45', goldDeep:'#9f7c3a', text:'#f5efe2', muted:'#a99f8c' },
+};
+// ==================================================
+
+const DURATION = 15, W = 1080, H = 1920, C = CONFIG.colors, MAXW = 940;
+const ctx = document.getElementById('c').getContext('2d');
+const clamp = (x,a=0,b=1) => Math.min(b, Math.max(a, x));
+const prog = (t,s,e) => clamp((t-s)/(e-s));
+const eOut = x => 1 - Math.pow(1-x, 3);
+const eIO  = x => x < .5 ? 4*x*x*x : 1 - Math.pow(-2*x+2, 3)/2;
+const eBack = x => { const c1=2.2, c3=c1+1; return 1 + c3*Math.pow(x-1,3) + c1*Math.pow(x-1,2); };
+const win = (t,s,e,d=.4) => eOut(prog(t,s,s+d)) * (1 - eIO(prog(t,e-d,e)));
+
+let logoImg = null;
+const logoReady = new Promise(res => { const im = new Image(); im.onload = () => { logoImg = im; res(); }; im.onerror = () => res(); im.src = CONFIG.logo; });
+
+// Deterministic gold dust
+const dust = Array.from({length: 46}, (_, i) => { const r = n => (Math.sin(i*127.1 + n*311.7) * 43758.5453) % 1; return { x: Math.abs(r(1))*W, y: Math.abs(r(2))*H, s: 2 + Math.abs(r(3))*4, v: 20 + Math.abs(r(4))*50, p: Math.abs(r(5))*6 }; });
+
+function goldGrad(y0, y1) { const g = ctx.createLinearGradient(0, y0, 0, y1); g.addColorStop(0, '#f6d77a'); g.addColorStop(.5, C.gold); g.addColorStop(1, C.goldDeep); return g; }
+
+// Draws RTL text centred at (x,y); shrinks the font until it fits MAXW
+function text(str, x, y, size, fill, alpha=1, weight='bold', scale=1, rot=0) {
+  if (alpha <= 0.001) return;
+  ctx.save(); ctx.globalAlpha = alpha;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.direction = 'rtl';
+  let s = size; ctx.font = `${weight} ${s}px "DejaVu Sans", sans-serif`;
+  while (ctx.measureText(str).width > MAXW && s > 20) { s -= 2; ctx.font = `${weight} ${s}px "DejaVu Sans", sans-serif`; }
+  ctx.translate(x, y); ctx.rotate(rot); ctx.scale(scale, scale);
+  ctx.fillStyle = fill === 'gold' ? goldGrad(-s/2, s/2) : fill;
+  ctx.fillText(str, 0, 0); ctx.restore();
+}
+
+function drawLogo(x, y, size, alpha, glow=0) {
+  if (!logoImg || alpha <= 0) return;
+  ctx.save(); ctx.globalAlpha = alpha;
+  if (glow > 0) { ctx.shadowColor = 'rgba(217,173,69,' + (0.6*glow) + ')'; ctx.shadowBlur = 80*glow; }
+  ctx.drawImage(logoImg, x - size/2, y - size/2, size, size); ctx.restore();
+}
+
+function background(t) {
+  ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H);
+  const rg = ctx.createRadialGradient(W/2, H*0.45, 0, W/2, H*0.45, H*0.6);
+  rg.addColorStop(0, '#2a2112'); rg.addColorStop(1, '#0000');
+  ctx.fillStyle = rg; ctx.fillRect(0, 0, W, H);
+  for (const d of dust) {
+    const y = ((d.y - t*d.v) % H + H) % H;
+    ctx.globalAlpha = 0.25 + 0.25*Math.sin(t*2 + d.p);
+    ctx.fillStyle = C.gold; ctx.beginPath(); ctx.arc(d.x, y, d.s, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+// Scene 2: the "food-o-meter"
+function meter(t, a) {
+  const cx = W/2, cy = H*0.56, R = 330, n = CONFIG.meterLabels.length;
+  const A0 = Math.PI, A1 = 2*Math.PI;               // semicircle, left -> right
+  const grow = eOut(prog(t, 4.0, 4.6));
+  ctx.save(); ctx.globalAlpha = a; ctx.lineCap = 'butt';
+  for (let i = 0; i < n; i++) {
+    const s = A0 + (A1-A0)*i/n, e = A0 + (A1-A0)*(i+1)/n - 0.03;
+    ctx.strokeStyle = i === n-1 ? C.gold : ['#3a3326','#5a4b2c','#7d6533'][i];
+    ctx.lineWidth = 70;
+    ctx.beginPath(); ctx.arc(cx, cy, R, s, s + (e-s)*grow); ctx.stroke();
+  }
+  ctx.restore();
+  // segment labels (placed outside the arc, upright)
+  CONFIG.meterLabels.forEach((lab, i) => {
+    const m = A0 + (A1-A0)*(i+0.5)/n, lx = cx + Math.cos(m)*(R+110), ly = cy + Math.sin(m)*(R+95);
+    const p = prog(t, 4.3 + i*0.12, 4.7 + i*0.12);
+    ctx.save(); ctx.globalAlpha = a*p; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.direction = 'rtl';
+    ctx.font = `bold ${i === n-1 ? 44 : 38}px "DejaVu Sans"`; ctx.fillStyle = i === n-1 ? C.gold : C.muted;
+    const ls = lab.split('\n'); ls.forEach((l, k) => ctx.fillText(l, lx, ly + (k - (ls.length-1)/2) * 50)); ctx.restore();
+  });
+  // needle: sweeps, overshoots past the scale, then jitters
+  const sweep = eIO(prog(t, 4.6, 6.4));
+  let ang = A0 + 0.05 + sweep * ((A1 - A0) + 0.32);
+  if (t > 6.4) ang += Math.sin((t-6.4)*38) * 0.05 * (1 - prog(t, 6.4, 7.6)*0.6);
+  ctx.save(); ctx.globalAlpha = a;
+  ctx.translate(cx, cy); ctx.rotate(ang);
+  ctx.fillStyle = C.text; ctx.beginPath(); ctx.moveTo(0, -14); ctx.lineTo(R + 40, 0); ctx.lineTo(0, 14); ctx.closePath(); ctx.fill();
+  ctx.restore();
+  ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = C.gold; ctx.beginPath(); ctx.arc(cx, cy, 34, 0, Math.PI*2); ctx.fill(); ctx.restore();
+  // little "steam" puffs when it overshoots
+  const puff = prog(t, 6.4, 7.6);
+  if (puff > 0) for (let k = 0; k < 3; k++) {
+    const pp = (puff + k*0.3) % 1;
+    ctx.save(); ctx.globalAlpha = a * (1-pp) * 0.6; ctx.fillStyle = '#e8e2d4';
+    const tx = cx + Math.cos(ang)*(R+40), ty = cy + Math.sin(ang)*(R+40);
+    ctx.beginPath(); ctx.arc(tx + k*24 - 24, ty + 40 - pp*170, 16 + pp*28, 0, Math.PI*2); ctx.fill(); ctx.restore();
+  }
+}
+
+function renderAt(t) {
+  t = clamp(t, 0, DURATION);
+  background(t);
+  const cx = W/2;
+
+  // Scene 1 (0–3.6): the eternal question
+  const s1 = win(t, 0, 3.6);
+  if (s1 > 0) {
+    CONFIG.hook.forEach((l, i) => { const p = eOut(prog(t, 0.15 + i*0.3, 0.7 + i*0.3)); text(l, cx, H*0.34 + i*95 + (1-p)*30, 64, C.muted, s1*p, 'normal'); });
+    const q = prog(t, 1.0, 1.6), pop = eBack(q);
+    const worry = t > 1.6 ? Math.sin(t*24) * 0.025 * (1 - prog(t, 1.6, 3.2)*0.5) : 0;
+    text(CONFIG.question, cx, H*0.50, 120, 'gold', s1*clamp(q*3), 'bold', 0.4 + 0.6*pop, worry);
+    // three anxious dots
+    for (let i = 0; i < 3; i++) { const p = prog(t, 1.9 + i*0.25, 2.1 + i*0.25); ctx.globalAlpha = s1*p; ctx.fillStyle = C.gold; ctx.beginPath(); ctx.arc(cx + 50 - i*50, H*0.59, 12, 0, Math.PI*2); ctx.fill(); }
+    ctx.globalAlpha = 1;
+  }
+
+  // Scene 2 (3.5–8): the food-o-meter
+  const s2 = win(t, 3.5, 8.0);
+  if (s2 > 0) {
+    text(CONFIG.meterIntro, cx, H*0.22, 66, C.text, s2 * eOut(prog(t, 3.6, 4.1)));
+    meter(t, s2);
+    const r = eBack(prog(t, 6.6, 7.1));
+    text(CONFIG.meterResult, cx, H*0.70, 72, 'gold', s2 * clamp(r), 'bold', 0.6 + 0.4*r);
+  }
+
+  // Scene 3 (8–11.6): side effects
+  const s3 = win(t, 8.0, 11.6);
+  if (s3 > 0) {
+    text(CONFIG.sideTitle, cx, H*0.28, 72, 'gold', s3 * eOut(prog(t, 8.1, 8.5)));
+    CONFIG.sideEffects.forEach((fx, i) => {
+      const p = eOut(prog(t, 8.5 + i*0.6, 9.0 + i*0.6)), y = H*0.40 + i*190, sl = (1-p)*90;
+      ctx.save(); ctx.globalAlpha = s3*p;
+      ctx.strokeStyle = C.goldDeep; ctx.lineWidth = 3; ctx.fillStyle = '#ffffff0d';
+      ctx.beginPath(); ctx.roundRect(90 + sl, y - 72, W - 180, 144, 24); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = C.gold; ctx.font = 'bold 52px "DejaVu Sans"'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(String(i+1), W - 160 + sl, y + 2);
+      ctx.restore();
+      ctx.save(); ctx.globalAlpha = s3*p; ctx.fillStyle = C.text; ctx.font = 'bold 52px "DejaVu Sans"';
+      ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.direction = 'rtl';
+      let s = 52; while (ctx.measureText(fx).width > 700 && s > 30) { s -= 2; ctx.font = `bold ${s}px "DejaVu Sans"`; }
+      ctx.fillText(fx, W - 230 + sl, y + 2); ctx.restore();
+    });
+  }
+
+  // Scene 4 (11.5–15): logo + services + contact (holds to the end)
+  const s4 = eOut(prog(t, 11.5, 12.1));
+  if (s4 > 0) {
+    const pop = eBack(prog(t, 11.5, 12.3));
+    drawLogo(cx, H*0.38, 600 * (0.6 + 0.4*pop), s4, 0.5 + 0.5*Math.sin((t-11.5)*2.5));
+    text(CONFIG.services, cx, H*0.60, 58, C.text, eOut(prog(t, 12.2, 12.8)));
+    ctx.save(); ctx.globalAlpha = eOut(prog(t, 12.6, 13.2));
+    ctx.strokeStyle = C.gold; ctx.lineWidth = 4; ctx.beginPath(); ctx.roundRect(cx - 330, H*0.665 - 60, 660, 120, 60); ctx.stroke(); ctx.restore();
+    ctx.save(); ctx.globalAlpha = eOut(prog(t, 12.6, 13.2)); ctx.fillStyle = C.gold; ctx.font = 'bold 54px "DejaVu Sans"';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.direction = 'ltr'; ctx.fillText(CONFIG.contact, cx, H*0.665); ctx.restore();
+  }
+
+  ctx.fillStyle = '#ffffff1a'; ctx.fillRect(0, H-8, W, 8);
+  ctx.fillStyle = C.gold; ctx.fillRect(W, H-8, -W*(t/DURATION), 8);
+}
+window.renderAt = renderAt; window.DURATION = DURATION; window.ready = logoReady;
+
+if (!new URLSearchParams(location.search).has('export')) {
+  const seek = document.getElementById('seek'), time = document.getElementById('time'), btn = document.getElementById('play');
+  let playing = true, t0 = performance.now(), cur = 0;
+  btn.onclick = () => { playing = !playing; btn.textContent = playing ? 'השהה' : 'נגן'; t0 = performance.now() - cur*1000; };
+  seek.oninput = () => { cur = +seek.value; t0 = performance.now() - cur*1000; };
+  (function loop(now) {
+    if (playing) { cur = ((now - t0)/1000) % DURATION; seek.value = cur; }
+    renderAt(cur); time.textContent = `${cur.toFixed(1)} / ${DURATION} ש׳`;
+    requestAnimationFrame(loop);
+  })(performance.now());
+} else { logoReady.then(() => renderAt(0)); }
+</script>
+</body>
+</html>
