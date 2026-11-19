@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "blueprint": {
+    "id": "generic",
+    "selection_reason": "A comedic animated character short with voice-over narration; no product, try-on or unboxing template fits, so the free film is used. Borrowed rules: one place, one subject, visible end state per beat, original music bed under the voice."
+  },
+  "brief": {
+    "objective": "A 30-second comedic animated roast of Dudi, a fictional larger-than-life businessman: his mind jumps from luxury plans to absurd penny-pinching. Key message: Dudi wants everything luxurious, but cheaper.",
+    "audience": "Friends of the creator, Hebrew speakers, watching on phones in a private chat.",
+    "placement": "WhatsApp and Instagram, vertical, watched with sound on.",
+    "subject": "Dudi, a fictional character (not a real person), in his own half-renovated luxury living room in Jerusalem.",
+    "verified_claims": [],
+    "call_to_action": "none"
+  },
+  "output": { "engine": "seedance", "aspect_ratio": "9:16", "duration_seconds": 30, "resolution": "720p" },
+  "visual_direction": {
+    "concept": "A high-end stylised 3D animated comedy short: a deadpan nature-documentary narrator describes Dudi as if he were a rare species. Each beat shows one absurd habit with a clear physical gag and end state; the payoff is Dudi bolting upright at night with yet another idea.",
+    "setting": "Dudi's large living room in a Jerusalem stone house mid-renovation: warm Jerusalem-stone walls, a rounded white ceiling with a built-in warm LED cove, a half-finished marble floor with a stack of large square ceramic tiles leaning on the wall, a toolbox and a folded ladder in a corner, a deep velvet sofa, a low walnut coffee table, a tall window with arched frame. Everything stays in place all film.",
+    "look": "Polished feature-animation 3D style: exaggerated proportions, big expressive eyes and eyebrows, soft subsurface skin, slightly glossy materials, saturated warm palette of terracotta, teal and gold, gentle depth of field. Light: the warm LED cove in the rounded ceiling, soft and even from above, plus a steady amber table lamp at screen right.",
+    "continuity": "Dudi has the same face, huge black curled moustache, curly dark hair, red nose, navy three-piece suit, gold pocket square and gold-cased phone in every shot. The tiles, sofa, coffee table and window never move unless a hand moves them. The electrician appears only in beat 5."
+  },
+  "storyboard": [
+    { "id": "s1", "start_ms": 0, "end_ms": 3000, "intention": "Hook: meet Dudi.", "framing": "Medium shot, Dudi centred in the living room, eye level, renovation visible behind him.", "action": "Dudi twirls one end of his moustache with two fingers and lifts his chin proudly; ends holding the pose.", "camera_movement": "Slow push in.", "lighting": "Warm LED cove from above, amber lamp at right.", "reference_ids": ["dudi"], "dialogue": "זה דודי. הוא חברת אחזקות.", "transition": "cut" },
+    { "id": "s2", "start_ms": 3000, "end_ms": 8000, "intention": "Build: his grand Swiss fantasies.", "framing": "Medium-wide, Dudi walking between sofa and window, phone at ear.", "action": "Dudi talks on the gold phone while 'flying' a small toy helicopter in his other hand in a loop through the air; ends holding the helicopter high, smiling dreamily.", "camera_movement": "Gentle pan following him.", "lighting": "Same warm cove light, lamp at right.", "reference_ids": ["dudi"], "dialogue": "עם הפרעת קשב ודרכון שווייצרי. בבוקר הוא שואל: כמה עולה מסוק בשווייץ?", "transition": "cut" },
+    { "id": "s3", "start_ms": 8000, "end_ms": 13000, "intention": "Build: from helicopters to tiles in a small car.", "framing": "Medium shot at the coffee table, a toy car and one large ceramic tile in frame.", "action": "Dudi stretches a tape measure across the big tile leaning on the wall, then holds the tape over a small toy car on the coffee table and frowns at it; ends scratching his head.", "camera_movement": "Locked-off.", "lighting": "Same warm cove light, lamp at right.", "reference_ids": ["dudi"], "dialogue": "חמש דקות אחר כך: האם קרמיקה מאה עשרים נכנסת בקיה?", "transition": "cut" },
+    { "id": "s4", "start_ms": 13000, "end_ms": 18000, "intention": "Build: haggling on a huge deal like at a market.", "framing": "Medium close-up, Dudi facing camera.", "action": "Dudi holds a small architectural model of an office tower in one hand and a ripe tomato in the other, weighs them up and down like a market scale, squints suspiciously; ends sniffing the tomato.", "camera_movement": "Slow push in.", "lighting": "Same warm cove light, lamp at right.", "reference_ids": ["dudi"], "dialogue": "פרויקט של מאתיים מיליון? הוא מתמקח כמו על קילו עגבניות.", "transition": "cut" },
+    { "id": "s5", "start_ms": 18000, "end_ms": 23000, "intention": "Build: the cheapskate reflex.", "framing": "Two-shot by the window: an electrician in grey overalls with a tool belt at left, Dudi at right.", "action": "The electrician hands Dudi a sheet of paper; Dudi takes it, reads, narrows his eyes and raises one finger; the electrician's shoulders drop.", "camera_movement": "Locked-off.", "lighting": "Same warm cove light, lamp at right.", "reference_ids": ["dudi"], "dialogue": "ולחשמלאי הוא אומר: אפשר להוריד שלושים אחוז?", "transition": "cut" },
+    { "id": "s6", "start_ms": 23000, "end_ms": 27500, "intention": "Payoff: he never stops.", "framing": "Medium-wide on the velvet sofa.", "action": "Dudi lies asleep on the sofa snoring, moustache fluttering, then bolts upright, eyes wide, and grabs his gold phone from the coffee table; ends sitting upright holding the phone.", "camera_movement": "Locked-off, then a quick push in as he sits up.", "lighting": "Cove light dimmed low and warm, the amber lamp steady at right.", "reference_ids": ["dudi"], "dialogue": "ובאמצע הלילה: רגע… יש לי עוד רעיון קטן.", "transition": "continuous" },
+    { "id": "s7", "start_ms": 27500, "end_ms": 30000, "intention": "Close: the held comic image.", "framing": "Close-up on Dudi's face lit by the phone screen glow from below.", "action": "Dudi types fast with both thumbs, moustache twitching with excitement, a mischievous grin spreading; holds the grin.", "camera_movement": "Locked-off.", "lighting": "Phone glow from below plus the dim amber lamp at right.", "reference_ids": ["dudi"], "dialogue": "", "transition": "fade" }
+  ],
+  "reference_images": [
+    {
+      "id": "dudi",
+      "role": "presenter",
+      "subject_kind": "fictional",
+      "description": "Dudi, the fictional main character, generated as a character sheet for identity across all shots.",
+      "preserve_details": ["huge black curled handlebar moustache", "curly dark hair", "round red nose", "navy three-piece suit with gold pocket square", "gold-cased smartphone", "stocky build, about 55 years old"],
+      "source": {
+        "kind": "generate",
+        "image_prompt": "Polished 3D feature-animation character, full body, standing, neutral light grey background, soft studio light: a stocky cheerful Israeli businessman about 55 years old with a huge black curled handlebar moustache, curly dark hair, big expressive brown eyes, thick arched eyebrows, round red nose, wearing a tailored navy three-piece suit with a gold pocket square and polished brown shoes, holding a gold-cased smartphone. Exaggerated cartoon proportions, glossy materials, warm saturated colours. No text, no logos."
+      }
+    }
+  ],
+  "audio": {
+    "mode": "voice-over",
+    "language": "Hebrew",
+    "accent": "Russian accent, natural, as spoken by a native Russian speaker fluent in Hebrew",
+    "voice_direction": "Male narrator aged 55 to 65, deep and slightly gravelly, slow deadpan delivery like a serious nature documentary, short dry pauses before each punchline; never mocking or exaggerated.",
+    "music": "Original klezmer-cabaret bed, about 100 BPM in 2/4, clarinet lead with violin and accordion, light upright bass; quiet under the voice, a small clarinet flourish on each cut, drops to near silence as he sleeps in s6, a comic sting when he sits up, resolves softly at the end.",
+    "ambience": "Quiet room tone, footsteps on marble, tape measure snapping back, paper rustle in s5, soft snoring in s6, rapid phone taps in s7."
+  },
+  "constraints": [
+    "Dudi is a fictional character and must not resemble any real person.",
+    "No captions, subtitles, titles, watermarks or any lettering in the frame; no logos on the phone, car or clothes.",
+    "Only one place: Dudi's living room. The electrician appears only in s5.",
+    "No profanity in the spoken lines."
+  ],
+  "assumptions": [
+    "The 3D feature-animation look follows the user's reference image, which was described in words because it could not be attached.",
+    "Episode 1 covers the opening of the user's text; the rest of the text is planned as later episodes.",
+    "On-screen captions such as 02:47 and censored swear words are added afterwards in editing, not inside the generated video.",
+    "The toy helicopter, toy car and tower model stand in for the Swiss helicopter, the Kia and the property deal so the film stays in one place."
+  ]
+}
